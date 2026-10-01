@@ -1,0 +1,15 @@
+# 批处理文件必须是 CRLF：
+# cmd.exe 按 CRLF 计算行偏移，读纯 LF 文件时会从行中段开始执行，
+# 把 `config.env` 截成 `.env`、把注释截成乱码当命令跑
+# （报「'xxx' 不是内部或外部命令」）。
+*.bat text eol=crlf
+
+# 其余文本统一 LF
+*.py    text eol=lf
+*.md    text eol=lf
+*.html  text eol=lf
+*.txt   text eol=lf
+*.env   text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf

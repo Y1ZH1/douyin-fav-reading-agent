@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local runtime state — 登录态 / 采集数据 / 进度 / AI key（绝不上传）
+state/
+config.json
+
+# Local personal config (contains your own paths/keys) — do NOT commit
+config.env
+
+# Local working directories
+work/
+downloads/
+
+# 临时脚本与测试产物（下划线开头 / 日志 / 截图）
+_*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

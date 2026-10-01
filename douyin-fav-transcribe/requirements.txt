@@ -1,0 +1,11 @@
+# 运行时第三方依赖（本仓库直接 import 的包）
+flask>=3.0
+httpx>=0.27
+playwright>=1.40
+faster-whisper>=1.0
+
+# 说明：
+# - transcriber.py / utils.py 来自 cap-backend 项目（见 README「部署前必读」），
+#   其底层依赖（ctranslate2 / numpy / tokenizers 等）会随 faster-whisper 一并安装。
+# - 安装后需执行一次：playwright install chrome   （复用本机已装的 Chrome/Edge 也可）
+# - ffmpeg 需自行安装并加入 PATH（用于抽音频，代码用 shutil.which 查找，不写死路径）

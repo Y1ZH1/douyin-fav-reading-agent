@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抖音收藏 · 本地转写</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#1a1e26; --panel2:#21262f; --line:#2d3340;
+    --txt:#e6e8ee; --sub:#9aa3b2; --muted:#5b6472;
+    --acc:#4f8cff; --acc2:#6aa7ff;
+    --ok:#2ea043; --ok-bg:rgba(46,160,67,.14);
+    --fail:#f85149; --fail-bg:rgba(248,81,73,.13);
+    --skip:#d29922; --skip-bg:rgba(210,153,34,.13);
+    --pend:#4f8cff;
+    --like:#ff5a7a;
+    --radius:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",Roboto,sans-serif;
+    font-size:14px; line-height:1.5;
+  }
+  a{color:var(--acc2); text-decoration:none;}
+  .wrap{max-width:1280px; margin:0 auto; padding:20px 24px 60px;}
+
+  /* header */
+  header{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:6px 0 14px;}
+  header h1{font-size:19px; font-weight:700;}
+  header h1 small{color:var(--sub); font-weight:400; font-size:13px; margin-left:8px;}
+  .spacer{flex:1;}
+  .btn{
+    background:var(--panel2); color:var(--txt); border:1px solid var(--line);
+    border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer;
+    transition:filter .15s, transform .05s; white-space:nowrap;
+  }
+  .btn:hover{filter:brightness(1.12);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600;}
+  .btn.primary:disabled{background:var(--muted); border-color:var(--muted); cursor:not-allowed;}
+  .btn.ghost{background:transparent;}
+  .btn.danger{color:#ff8b85; border-color:#6b3a38;}
+  .btn:disabled{opacity:.55; cursor:not-allowed;}
+
+  /* tabs */
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:16px;}
+  .tab{
+    background:transparent; border:none; border-bottom:2px solid transparent;
+    color:var(--sub); font-size:14px; padding:9px 16px; cursor:pointer;
+    font-family:inherit; display:flex; align-items:center; gap:7px;
+  }
+  .tab:hover{color:var(--txt);}
+  .tab.on{color:var(--txt); border-bottom-color:var(--acc); font-weight:600;}
+  .tab .n{
+    background:var(--panel2); border:1px solid var(--line); border-radius:20px;
+    font-size:11px; padding:0 7px; line-height:16px; color:var(--sub);
+  }
+  .tab.on .n{background:rgba(79,140,255,.18); border-color:rgba(79,140,255,.4); color:#9cc2ff;}
+
+  .statrow{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .stat{
+    flex:1; min-width:110px; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); padding:12px 16px;
+  }
+  .stat .v{font-size:26px; font-weight:700;}
+  .stat .l{color:var(--sub); font-size:12px; margin-top:2px;}
+  .stat.ok .v{color:#4cd070;}
+  .stat.pending .v{color:var(--acc2);}
+  .stat.fail .v{color:var(--fail);}
+
+  /* toolbar */
+  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  .search{
+    flex:1; min-width:220px; background:var(--panel); border:1px solid var(--line);
+    border-radius:8px; padding:8px 12px; color:var(--txt); font-size:13px;
+  }
+  .search:focus{outline:none; border-color:var(--acc);}
+  select.filter{
+    background:var(--panel); border:1px solid var(--line); color:var(--txt);
+    border-radius:8px; padding:8px 10px; font-size:13px;
+  }
+
+  /* progress bar */
+  .progbar{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:12px 16px; margin-bottom:16px; display:none;}
+  .progbar.on{display:block;}
+  .progbar .top{display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;}
+  .progbar .cur{color:var(--sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .track{height:8px; background:var(--panel2); border-radius:6px; overflow:hidden;}
+  .fill{height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2));
+    transition:width .3s;}
+  .progbar.indet .fill{width:35% !important; animation:slide 1.2s ease-in-out infinite;}
+  @keyframes slide{0%{margin-left:-35%}100%{margin-left:100%}}
+  .progbar .meta{margin-top:8px; color:var(--sub); font-size:12px;}
+  .progbar .meta b.ok{color:#4cd070;} .progbar .meta b.f{color:var(--fail);}
+
+  /* cards grid */
+  .grid{
+    display:grid; gap:16px;
+    grid-template-columns:repeat(auto-fill,minmax(215px,1fr));
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; cursor:pointer; position:relative;
+    transition:border-color .15s, transform .08s;
+  }
+  .card:hover{border-color:#3a4a68; transform:translateY(-1px);}
+  .thumb{position:relative; aspect-ratio:3/4; background:var(--panel2); overflow:hidden;}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .thumb .noimg{display:flex; align-items:center; justify-content:center; height:100%;
+    color:var(--muted); font-size:12px;}
+  .dur{position:absolute; right:6px; bottom:6px; background:rgba(0,0,0,.72);
+    color:#fff; font-size:11px; padding:1px 6px; border-radius:5px;}
+  .badge{position:absolute; top:8px; left:8px; font-size:11px; font-weight:600;
+    padding:2px 8px; border-radius:6px;}
+  .badge.ok{background:var(--ok); color:#fff;}
+  .badge.fail{background:var(--fail); color:#fff;}
+  .badge.skipped{background:var(--skip); color:#1a1a00;}
+  .badge.pending{background:rgba(79,140,255,.85); color:#fff;}
+  .badge.processing{background:#7c3aed; color:#fff;}
+
+  /* 已提取覆盖层 */
+  .card.done .thumb::after{
+    content:"已提取 ✓"; position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(10,14,20,.55); color:#eafff0; font-size:15px; font-weight:700;
+    letter-spacing:1px;
+  }
+  .card.done .thumb img{filter:saturate(.7) brightness(.8);}
+  .card.done{cursor:default;}
+  .card.done .check{display:none;}
+
+  .body{padding:10px 12px 12px;}
+  .body .t{
+    font-size:13px; font-weight:500; height:40px; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .body .au{color:var(--sub); font-size:12px; margin-top:4px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .body .meta2{color:var(--muted); font-size:11px; margin-top:3px;}
+
+  /* checkbox */
+  .check{
+    position:absolute; top:8px; right:8px; width:20px; height:20px;
+    background:rgba(0,0,0,.55); border:2px solid rgba(255,255,255,.75);
+    border-radius:5px; display:flex; align-items:center; justify-content:center;
+  }
+  .card.sel .check{background:var(--acc); border-color:var(--acc);}
+  .card.sel .check::after{content:"✓"; color:#fff; font-size:13px; font-weight:700;}
+  .card .check{pointer-events:none;}
+
+  /* 收藏夹标签 */
+  .ftags{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;}
+  .ftag{background:rgba(79,140,255,.16); color:#9cc2ff; border:1px solid rgba(79,140,255,.3);
+    border-radius:5px; padding:0 6px; font-size:11px; line-height:17px; cursor:pointer;}
+  .ftag:hover{background:rgba(79,140,255,.3);}
+  .card.summarized .thumb::before{
+    content:"AI 总结 ✓"; position:absolute; left:8px; bottom:8px; z-index:2;
+    background:rgba(124,58,237,.93); color:#fff; font-size:11px; font-weight:700;
+    padding:2px 8px; border-radius:6px;
+  }
+  .badge.sum{position:absolute; top:34px; left:8px; background:#7c3aed; color:#fff;}
+
+  /* 喜欢 Tab 的引导 / 续采条 */
+  .notice{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .notice .txt{flex:1; min-width:220px; color:var(--sub); font-size:13px; line-height:1.7;}
+  .notice .txt b{color:var(--txt);}
+  .notice.warn{border-color:#6b4a2a; background:rgba(210,153,34,.07);}
+
+  /* 加载更多 */
+  .more{display:flex; justify-content:center; padding:22px 0 6px;}
+  .moreinfo{color:var(--muted); font-size:12px; text-align:center; padding:18px 0 4px;}
+
+  /* 弹窗 */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.62); display:none;
+    align-items:center; justify-content:center; z-index:99; padding:20px;}
+  .modal.on{display:flex;}
+  .modal .box{background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:22px 24px; width:100%; max-width:480px;}
+  .modal h2{font-size:16px; margin-bottom:6px;}
+  .modal p{color:var(--sub); font-size:12px; margin-bottom:6px; line-height:1.7;}
+  .modal label{display:block; color:var(--sub); font-size:12px; margin:12px 0 4px;}
+  .modal input{width:100%; background:var(--panel2); border:1px solid var(--line);
+    color:var(--txt); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit;}
+  .modal input:focus{outline:none; border-color:var(--acc);}
+  .modal .row{display:flex; gap:10px; justify-content:flex-end; margin-top:18px;}
+  .modal .status{font-size:12px; margin-top:12px;}
+  .modal .status.ok{color:#4cd070;} .modal .status.no{color:var(--fail);}
+
+  /* 取消收藏 / 取消喜欢 */
+  .acts{margin-top:8px;}
+  .act{
+    width:100%; background:transparent; border:1px solid var(--line); color:var(--muted);
+    border-radius:6px; padding:3px 0; font-size:11px; cursor:pointer; font-family:inherit;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .act:hover{color:#ff8b85; border-color:#6b3a38; background:rgba(248,81,73,.08);}
+  .act:disabled{opacity:.5; cursor:not-allowed;}
+  .act.retr{margin-bottom:6px;}
+  .act.retr:hover{color:#7cc4ff; border-color:#2f5b7a; background:rgba(88,166,255,.10);}
+  .btn.danger:not(:disabled){color:#ff9a94; border-color:#6b3a38;}
+  .btn.danger:not(:disabled):hover{background:rgba(248,81,73,.14);}
+  .modal .box.warnbox{border-color:#6b3a38; max-width:540px;}
+  .rmlist{max-height:150px; overflow:auto; background:var(--panel2); border:1px solid var(--line);
+    border-radius:8px; padding:8px 10px 8px 26px; margin-top:10px; color:var(--sub); font-size:12px;}
+  .rmlist:empty{display:none;}
+  .rmlist li{margin:2px 0;}
+  .rmsure{display:flex; align-items:center; gap:8px; margin-top:12px; color:var(--sub); font-size:12px;}
+  .rmsure input{width:auto !important; margin:0;}
+  .warnbig{color:#ff9a94; font-weight:700;}
+
+  footer{color:var(--muted); font-size:12px; margin-top:24px; text-align:center;}
+  .empty{color:var(--muted); text-align:center; padding:60px 0;}
+  ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#2c3240;border-radius:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎬 抖音收藏 <small>本地 Whisper 转写 · AI 总结</small></h1>
+    <div class="spacer"></div>
+    <button class="btn ghost" onclick="startCollect()" id="btnCollect">🔄 重新采集收藏</button>
+    <button class="btn ghost" onclick="openObsidian()">📁 笔记目录</button>
+    <button class="btn ghost" onclick="openSummaryDir()">📁 总结目录</button>
+    <button class="btn ghost" onclick="openAiSettings()" id="btnAi">⚙️ AI 设置</button>
+    <button class="btn" onclick="summarizeSelected('each')" id="btnSum">🧠 总结选中</button>
+    <button class="btn primary" onclick="transcribeSelected()" id="btnTrans">▶ 转写选中</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" id="tabFav" onclick="switchTab('fav')">⭐ 收藏夹 <span class="n" id="nFav">–</span></button>
+    <button class="tab" id="tabLike" onclick="switchTab('like')">❤️ 喜欢 <span class="n" id="nLike">–</span></button>
+  </div>
+
+  <div class="statrow">
+    <div class="stat pending"><div class="v" id="stPending">–</div><div class="l">未提取</div></div>
+    <div class="stat ok"><div class="v" id="stOk">–</div><div class="l">已提取</div></div>
+    <div class="stat"><div class="v" id="stSum">–</div><div class="l">AI 已总结</div></div>
+    <div class="stat fail"><div class="v" id="stFail">–</div><div class="l">失败</div></div>
+    <div class="stat"><div class="v" id="stSkip">–</div><div class="l">无语音跳过</div></div>
+    <div class="stat" id="stFolderBox"><div class="v" id="stFolders">–</div><div class="l">收藏夹数</div></div>
+    <div class="stat"><div class="v" id="stTotal">–</div><div class="l" id="stTotalLabel">收藏总数</div></div>
+  </div>
+
+  <div id="likeNotice"></div>
+
+  <div class="toolbar">
+    <input class="search" id="q" placeholder="搜索标题 / 作者 / 收藏夹…（回车或停顿后自动搜）">
+    <select class="filter" id="folderSel" onchange="reload()" style="max-width:180px;">
+      <option value="all">全部收藏夹</option>
+    </select>
+    <select class="filter" id="f" onchange="reload()">
+      <option value="all">全部状态</option>
+      <option value="pending">未提取</option>
+      <option value="ok">已提取</option>
+      <option value="notsum">已转写·未总结</option>
+      <option value="summed">已总结</option>
+      <option value="fail">失败</option>
+      <option value="skipped">无语音</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;color:var(--sub);font-size:13px;">
+      <input type="checkbox" id="selVisible" onchange="toggleSelVisible()"> 选当前已加载
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;color:var(--sub);font-size:13px;">
+      模型
+      <select class="filter" id="modelSel" style="padding:4px 6px;">
+        <option value="large-v3" selected>large-v3 推荐</option>
+        <option value="small">small</option>
+      </select>
+      <span id="modelHint" style="font-size:12px;color:var(--sub);"></span>
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;color:var(--sub);font-size:13px;"
+           title="外文视频的翻译方式：逐句对照=原文一句+中文一句；整段翻译=原文整段+中文整段">
+      翻译
+      <select class="filter" id="trMode" style="padding:4px 6px;">
+        <option value="aligned" selected>逐句对照</option>
+        <option value="whole">整段翻译</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="toolbar">
+    <input class="search" id="topic" placeholder="（可选）主题综述的标题/关注点，如：足球训练方法 / 面部矫正">
+    <button class="btn" onclick="summarizeSelected('topic')" id="btnTopic">📚 汇总成主题综述</button>
+    <button class="btn danger" onclick="uncollectSelected()" id="btnUncol" disabled
+      title="在抖音上真的取消，不可逆">✕ 取消收藏选中</button>
+    <span id="selInfo" style="color:var(--sub);font-size:12px;"></span>
+  </div>
+
+  <div class="progbar" id="progbar">
+    <div class="top">
+      <span id="progTitle">处理中…</span>
+      <span style="display:flex;align-items:center;gap:10px;">
+        <span id="progCount">0/0</span>
+        <button class="btn ghost" id="btnStop" onclick="stopJob()" style="padding:3px 10px;font-size:12px;">⏹ 停止</button>
+      </span>
+    </div>
+    <div class="track"><div class="fill" id="progFill"></div></div>
+    <div class="cur" id="progCur"></div>
+    <div class="meta" id="progMeta"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none;">暂无数据。</div>
+  <div class="more" id="moreBox" style="display:none;">
+    <button class="btn" id="btnMore" onclick="loadPage(false)">加载更多</button>
+  </div>
+  <div class="moreinfo" id="moreInfo" style="display:none;"></div>
+
+  <div class="modal" id="aiModal">
+    <div class="box">
+      <h2>⚙️ DeepSeek AI 设置</h2>
+      <p>用于「AI 总结」和「英语视频翻译」。Key 只保存在本机 <code>config.json</code>，已加入 .gitignore，不会上传 GitHub。</p>
+      <label>API Key（sk-…）</label>
+      <input id="aiKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx" autocomplete="off">
+      <label>Base URL（默认官方，可留空）</label>
+      <input id="aiBase" placeholder="https://api.deepseek.com" autocomplete="off">
+      <label>模型（默认 deepseek-chat，可留空）</label>
+      <input id="aiModel" placeholder="deepseek-chat" autocomplete="off">
+      <div class="status" id="aiStatus"></div>
+      <div class="row">
+        <button class="btn ghost" onclick="closeAiSettings()">取消</button>
+        <button class="btn ghost" onclick="testAi()">测试连接</button>
+        <button class="btn primary" onclick="saveAiSettings()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="rmModal">
+    <div class="box warnbox">
+      <h2 id="rmTitle">⚠️ 取消</h2>
+      <p id="rmDesc"></p>
+      <ul class="rmlist" id="rmList"></ul>
+      <label class="rmsure">
+        <input type="checkbox" id="rmChk"
+          onchange="document.getElementById('rmOk').disabled = !this.checked">
+        我确认要在抖音上取消这 <b class="warnbig" id="rmCount">0</b> 条（<b>不可逆</b>，需重新手动操作才能恢复）
+      </label>
+      <label class="rmsure">
+        <input type="checkbox" id="rmVerify" checked>
+        逐条复核（每条多一次只读请求，能以抖音实际状态为准）
+      </label>
+      <div class="status" id="rmNote"></div>
+      <div class="row">
+        <button class="btn ghost" onclick="closeRemoveModal()">我再想想</button>
+        <button class="btn danger" id="rmOk" disabled onclick="doUncollect()">确认取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PAGE = 60;
+let curTab = 'fav';            // 'fav' 收藏 | 'like' 喜欢
+let items = [];                // 当前 Tab 已加载的条目
+let total = 0;                 // 当前筛选下的总条数（服务端）
+let lastKey = '';              // 上次请求的筛选签名（命中时可用 total_hint 跳过重复筛选）
+let loading = false;
+let selected = new Set();
+let job = null, jobTimer = null, collectJob = null;
+let likeInited = false;        // 喜欢 Tab 是否已初始化过（懒加载：未点过就不请求）
+let likeMeta = null;
+
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+// ---------- Tab ----------
+function switchTab(t){
+  if(t === curTab){ return; }
+  curTab = t;
+  document.getElementById('tabFav').classList.toggle('on', t==='fav');
+  document.getElementById('tabLike').classList.toggle('on', t==='like');
+  // 收藏夹筛选只对收藏有意义
+  document.getElementById('folderSel').disabled = (t !== 'fav');
+  document.getElementById('btnCollect').textContent =
+    (t === 'like') ? '❤️ 采集喜欢' : '🔄 重新采集收藏';
+  document.getElementById('btnCollect').dataset.tab = t;
+  document.getElementById('stFolderBox').style.display = (t === 'fav') ? '' : 'none';
+  document.getElementById('stTotalLabel').textContent =
+    (t === 'like') ? '喜欢总数' : '收藏总数';
+
+  if(t === 'like' && !likeInited){
+    likeInited = true;
+    return initLikeTab();          // 懒加载：只有点进来才拉数据/提示采集
+  }
+  reload();
+}
+
+// ---------- 喜欢 Tab 的懒加载入口 ----------
+async function initLikeTab(){
+  renderLikeNotice('正在读取本地「喜欢」数据…');
+  likeMeta = await api('/api/liked/meta');
+  if(!likeMeta.exists || likeMeta.count === 0){
+    items = []; total = 0;
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('moreBox').style.display = 'none';
+    document.getElementById('moreInfo').style.display = 'none';
+    renderLikeNotice('本地还没有采集过「喜欢」。'
+      + '点右侧按钮开始采集 —— 数据量可能很大（几千到几万条），'
+      + '<b>支持随时中断、下次从断点继续</b>，已采到的不重复。', true);
+    await loadStatsOnly();
+    return;
+  }
+  renderLikeNotice('');
+  await reload();
+}
+
+function renderLikeNotice(msg, warn){
+  const box = document.getElementById('likeNotice');
+  if(!msg){ box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div class="notice${warn?' warn':''}">
+      <div class="txt">${msg}</div>
+      <button class="btn" onclick="startCollectLiked(false)" id="btnLikeGo">▶ 开始采集喜欢</button>
+    </div>`;
+}
+
+// ---------- 统计 ----------
+async function loadStatsOnly(){
+  const s = await api('/api/stats?src=' + curTab);
+  if(s.src !== curTab) return;
+  document.getElementById('stTotal').textContent = s.total;
+  document.getElementById('stOk').textContent = s.ok;
+  document.getElementById('stFail').textContent = s.fail;
+  document.getElementById('stSkip').textContent = s.skipped;
+  document.getElementById('stPending').textContent = s.pending;
+  document.getElementById('stSum').textContent = (s.summarized != null ? s.summarized : 0);
+  document.getElementById('stFolders').textContent = (s.folders != null ? s.folders : 0);
+  if(curTab === 'fav') document.getElementById('nFav').textContent = s.total;
+  else document.getElementById('nLike').textContent = s.total;
+}
+
+// ---------- 分页加载 ----------
+function filterParams(){
+  return {
+    folder: (curTab === 'fav') ? (document.getElementById('folderSel').value || 'all') : 'all',
+    state: document.getElementById('f').value || 'all',
+    q: (document.getElementById('q').value || '').trim(),
+  };
+}
+
+function sig(){
+  const p = filterParams();
+  return `${curTab}|${p.folder}|${p.state}|${p.q}`;
+}
+
+async function reload(){
+  items = [];
+  document.getElementById('grid').innerHTML = '';
+  lastKey = '';
+  await Promise.all([loadPage(true), loadStatsOnly()]);
+}
+
+async function loadPage(reset){
+  if(loading) return;
+  loading = true;
+  const btn = document.getElementById('btnMore');
+  if(btn) btn.disabled = true;
+
+  const p = filterParams();
+  const key = sig();
+  const hint = (key === lastKey) ? total : -1;
+  const offset = reset ? 0 : items.length;
+  const url = `/api/items?src=${curTab}&offset=${offset}&limit=${PAGE}`
+    + `&folder=${encodeURIComponent(p.folder)}&state=${encodeURIComponent(p.state)}`
+    + `&q=${encodeURIComponent(p.q)}&total_hint=${hint}`;
+  let d;
+  try{ d = await api(url); }
+  catch(e){ d = {items:[], total:0, has_more:false}; }
+
+  if(reset){ items = []; }
+  items = items.concat(d.items || []);
+  total = d.total || 0;
+  lastKey = key;
+
+  render();
+  loading = false;
+  if(btn) btn.disabled = false;
+
+  const moreBox = document.getElementById('moreBox');
+  const moreInfo = document.getElementById('moreInfo');
+  const hasMore = d.has_more;
+  moreBox.style.display = hasMore ? '' : 'none';
+  if(items.length && !hasMore){
+    moreInfo.style.display = '';
+    moreInfo.textContent = `已全部加载（${items.length} 条）`;
+  } else {
+    moreInfo.style.display = 'none';
+  }
+}
+
+function fmtDur(ms){
+  if(!ms) return '';
+  const s = Math.round(ms/1000);
+  const m = Math.floor(s/60), ss = s%60;
+  return (m? m+'分':'') + ss + '秒';
+}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// ---------- 渲染 ----------
+function render(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  grid.innerHTML = '';
+
+  if(items.length === 0){
+    empty.style.display = 'block';
+    empty.textContent = (curTab === 'like')
+      ? '没有符合条件的「喜欢」条目。'
+      : '暂无数据。点「重新采集收藏」，或先运行 collector.py。';
+    updateSelInfo();
+    return;
+  }
+  empty.style.display = 'none';
+
+  const frag = document.createDocumentFragment();
+  for(const it of items){
+    const card = document.createElement('div');
+    card.className = 'card ' + it.state + (it.state==='ok'?' done':'')
+      + (it.summarized?' summarized':'') + (selected.has(it.aweme_id)?' sel':'');
+    const badge = {pending:'未提取',ok:'已提取',fail:'失败',skipped:'无语音'}[it.state] || it.state;
+    const fts = (it.folders||[]).map(f=>`<span class="ftag" data-folder="${esc(f)}">${esc(f)}</span>`).join('');
+    const what = (curTab === 'like') ? '喜欢' : '收藏';
+    card.innerHTML = `
+      <div class="thumb">
+        ${it.cover? `<img loading="lazy" src="${it.cover}" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('noimg');this.remove()">`:'<div class="noimg">无封面</div>'}
+        <div class="dur">${fmtDur(it.duration)}</div>
+        <span class="badge ${it.state}">${badge}</span>
+        ${it.state!=='ok'?`<div class="check"></div>`:''}
+      </div>
+      <div class="body">
+        <div class="t"></div>
+        <div class="au">${esc(it.author)||'未知作者'}</div>
+        <div class="meta2">${it.published||''}${it.liked?' · ❤️ 喜欢':''}</div>
+        <div class="ftags">${fts}</div>
+        <div class="acts">
+          ${it.state==='ok'?`<button class="act retr" title="按当前翻译模式重新转写这条，覆盖旧笔记（转录出错时用）">↻ 重新转录</button>`:''}
+          <button class="act uncol" title="在抖音上取消${what}（不可逆）">✕ 取消${what}</button>
+        </div>
+      </div>`;
+    card.querySelector('.t').textContent = it.title;
+
+    card.querySelector('.act.uncol').addEventListener('click', ev=>{
+      ev.stopPropagation();
+      uncollectOne(it.aweme_id, it.title);
+    });
+
+    const retrBtn = card.querySelector('.act.retr');
+    if(retrBtn) retrBtn.addEventListener('click', ev=>{
+      ev.stopPropagation();
+      retranscribeOne(it.aweme_id, it.title);
+    });
+
+    card.querySelectorAll('.ftag').forEach(el=>{
+      el.addEventListener('click', ev=>{
+        ev.stopPropagation();
+        if(curTab !== 'fav') return;      // 收藏夹筛选只在收藏 Tab 生效
+        document.getElementById('folderSel').value = el.dataset.folder;
+        reload();
+      });
+    });
+
+    card.addEventListener('click', ()=>{
+      if(it.state === 'ok'){
+        if(confirm('该视频已提取过 ✓\n打开抖音原视频？')) window.open(it.video_url||'', '_blank');
+        return;
+      }
+      if(selected.has(it.aweme_id)) selected.delete(it.aweme_id);
+      else selected.add(it.aweme_id);
+      card.classList.toggle('sel');
+      updateSelInfo();
+    });
+    card.addEventListener('dblclick', (e)=>{
+      if(it.state === 'ok') return;
+      e.stopPropagation();
+      transcribeOne(it.aweme_id);
+    });
+    frag.appendChild(card);
+  }
+  grid.appendChild(frag);
+  updateSelInfo();
+}
+
+function updateSelInfo(){
+  const el = document.getElementById('selInfo');
+  if(el) el.textContent = selected.size ? `已选中 ${selected.size} 条（跨 Tab 保留）` : '';
+  const b = document.getElementById('btnUncol');
+  if(b){
+    b.textContent = `✕ 取消${curTab === 'like' ? '喜欢' : '收藏'}选中`;
+    if(!job && !collectJob) b.disabled = (selected.size === 0);
+  }
+}
+
+// ---------- 取消收藏 / 取消喜欢（不可逆） ----------
+let rmCtx = null;
+
+function uncollectSelected(){
+  const ids = [...selected];
+  if(ids.length === 0){ alert('先勾选要取消的条目（在卡片上点一下即选中）。'); return; }
+  openRemoveModal(ids, curTab);
+}
+
+function uncollectOne(aid, title){
+  openRemoveModal([aid], curTab, title);
+}
+
+function openRemoveModal(ids, src, singleTitle){
+  const isLike = (src === 'like');
+  const what = isLike ? '喜欢' : '收藏';
+  rmCtx = {ids, src};
+  document.getElementById('rmTitle').textContent = `⚠️ 取消${what} —— 不可逆操作`;
+  document.getElementById('rmDesc').innerHTML =
+    `即将在<b>抖音上</b>真的取消这 <span class="warnbig">${ids.length}</span> 条${what}。`
+    + `取消成功后本工具的本地列表会同步移除；但 <b>抖音上需要你重新手动${what}才能恢复</b>。`
+    + `已转写 / 已总结的笔记不受影响，会留在 Obsidian 里。`;
+  const lis = ids.slice(0, 12).map(id=>{
+    const it = items.find(x=>x.aweme_id === id);
+    const t = singleTitle && ids.length === 1 ? singleTitle
+      : ((it && it.title) || id);
+    return `<li>${esc(String(t).slice(0,46))}</li>`;
+  }).join('');
+  document.getElementById('rmList').innerHTML = lis
+    + (ids.length > 12 ? `<li>… 另有 ${ids.length - 12} 条</li>` : '');
+  document.getElementById('rmCount').textContent = ids.length;
+  document.getElementById('rmChk').checked = false;
+  const ok = document.getElementById('rmOk');
+  ok.disabled = true;
+  ok.textContent = `确认取消 ${ids.length} 条`;
+  document.getElementById('rmNote').textContent =
+    '提示：抖音对写接口有风控，若弹出滑块验证则这条会失败；失败条目会保留在列表里，可稍后重试。';
+  document.getElementById('rmModal').classList.add('on');
+}
+
+function closeRemoveModal(){
+  document.getElementById('rmModal').classList.remove('on');
+  rmCtx = null;
+}
+
+async function doUncollect(){
+  if(!rmCtx) return;
+  const ids = rmCtx.ids.slice();
+  const src = rmCtx.src;
+  const verify = document.getElementById('rmVerify').checked;
+  closeRemoveModal();
+  if(job || collectJob){ alert('已有任务在进行中'); return; }
+  const r = await api('/api/uncollect', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ids, src, verify})
+  });
+  if(r.error){ alert(r.error); return; }
+  job = r.job_id;
+  setBusy(true);
+  const bar = document.getElementById('progbar');
+  bar.classList.add('on'); bar.classList.remove('indet');
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progCount').textContent = `0/${r.total}`;
+  document.getElementById('progTitle').textContent =
+    (src === 'like' ? '正在取消「喜欢」…' : '正在取消「收藏」…');
+  pollJob();
+}
+
+// ---------- 选择 ----------
+function toggleSelVisible(){
+  const on = document.getElementById('selVisible').checked;
+  const vis = items.filter(it=>it.state !== 'ok');
+  if(on) vis.forEach(it=>selected.add(it.aweme_id));
+  else vis.forEach(it=>selected.delete(it.aweme_id));
+  render();
+  updateSelInfo();
+}
+
+// ---------- 转写 ----------
+function curTrMode(){
+  const el = document.getElementById('trMode');
+  return el ? el.value : 'aligned';
+}
+
+async function transcribeSelected(){
+  const ids = [...selected];
+  if(ids.length === 0){
+    alert('先在卡片上点选要转写的视频（或勾「选当前已加载」）。已提取的不可再转。');
+    return;
+  }
+  await startJob(ids, document.getElementById('modelSel').value, false);
+}
+
+async function transcribeOne(aid){
+  if(confirm('转写这一条？')) await startJob([aid], document.getElementById('modelSel').value, false);
+}
+
+async function retranscribeOne(aid, title){
+  const mode = curTrMode() === 'whole' ? '整段翻译' : '逐句对照';
+  if(!confirm(`重新转录「${(title||'').slice(0,30)}」？\n\n将丢弃当前笔记内容，按「${mode}」模式重跑并覆盖。`)) return;
+  await startJob([aid], document.getElementById('modelSel').value, true);
+}
+
+function setBusy(on){
+  document.getElementById('btnTrans').disabled = on;
+  document.getElementById('btnCollect').disabled = on;
+  ['btnSum','btnTopic'].forEach(id=>{const b=document.getElementById(id); if(b) b.disabled=on;});
+  const u = document.getElementById('btnUncol');
+  if(u) u.disabled = on || selected.size === 0;
+}
+
+async function startJob(ids, model, force){
+  if(job){ alert('已有任务在进行中'); return; }
+  const r = await api('/api/transcribe', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ids, model, force: !!force, translate_mode: curTrMode()})
+  });
+  if(r.error){ alert(r.error); return; }
+  job = r.job_id;
+  setBusy(true);
+  document.getElementById('progbar').classList.add('on');
+  document.getElementById('progbar').classList.remove('indet');
+  pollJob();
+}
+
+async function pollJob(){
+  if(!job) return;
+  const r = await api('/api/jobs/' + job);
+  const bar = document.getElementById('progbar');
+  if(r.error){ endJobUI(); return; }
+
+  const isCollect = (r.kind === 'collect_liked');
+  const isUncol = (r.kind === 'uncollect');
+  document.getElementById('progCount').textContent = isCollect
+    ? (r.ok ? ('已采 ' + r.ok + ' 条') : '采集中…')
+    : `${r.done}/${r.total}`;
+  // 采集喜欢页数未知，用不定长进度条；转写/总结/取消用真实百分比
+  bar.classList.toggle('indet', isCollect);
+  if(!isCollect){
+    const pct = r.total ? (r.done / r.total * 100) : 0;
+    document.getElementById('progFill').style.width = pct + '%';
+  }
+  const runTxt = isCollect ? '正在采集「喜欢」…'
+    : (isUncol ? (r.src === 'like' ? '正在取消「喜欢」…' : '正在取消「收藏」…')
+    : (r.kind === 'summarize' ? '正在 AI 总结…' : '正在转写…'));
+  document.getElementById('progTitle').textContent =
+    r.status==='running' ? runTxt
+    : (r.status==='done' ? '完成'
+    : (r.status==='stopped' ? '已停止' : '已结束'));
+  document.getElementById('progCur').textContent = r.current_title ? ('当前：' + r.current_title) : '';
+  document.getElementById('progMeta').innerHTML = isCollect
+    ? (r.message ? `<span>${esc(r.message)}</span>` : '')
+    : (isUncol
+       ? `已取消 <b class="ok">${r.ok}</b> · 失败 <b class="f">${r.fail}</b>`
+         + (r.message ? ` · <span style="color:var(--sub)">${esc(r.message)}</span>` : '')
+       : `成功 <b class="ok">${r.ok}</b> · 失败 <b class="f">${r.fail}</b> · 跳过 ${r.skipped}`
+         + (r.message ? ` · <span style="color:var(--sub)">${esc(r.message)}</span>` : ''));
+
+  document.getElementById('btnStop').style.display = (r.status === 'running') ? '' : 'none';
+
+  if(r.status === 'running'){
+    jobTimer = setTimeout(pollJob, isCollect ? 1200 : 1500);
+    return;
+  }
+
+  // 结束
+  const wasCollect = isCollect;
+  const endKind = r.kind;
+  const finishedId = r.id || job;
+  job = null;
+  clearTimeout(jobTimer);
+  setBusy(false);
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('btnStop').textContent = '⏹ 停止';
+  setTimeout(()=>document.getElementById('progbar').classList.remove('on'), 2500);
+
+  if(endKind === 'uncollect'){
+    selected.clear();
+    await Promise.all([reload(), loadFolders(), loadStatsOnly()]);
+    if(r.src === 'like'){ likeMeta = await api('/api/liked/meta'); }
+    try{
+      const res = await api('/api/jobs/' + finishedId + '/results');
+      const rs = Object.values((res && res.results) || {});
+      const fails = rs.filter(x => !x.ok);
+      const unconfirmed = rs.filter(x => x.ok && x.confirmed === null);
+      const sName = (r.src === 'like') ? '喜欢' : '收藏';
+      let msg = `取消${sName}结束。\n\n成功 ${rs.length - fails.length} / ${rs.length} 条`;
+      if(unconfirmed.length) msg += `（其中 ${unconfirmed.length} 条未复核/复核超时）`;
+      if(r.status === 'stopped') msg += '\n（任务被手动停止，剩余条目未处理）';
+      msg += `\n本地列表：${(r.summary && r.summary.dropped) ? (r.summary.dropped.before + ' → ' + r.summary.dropped.after + ' 条') : '已同步'}`;
+      if(fails.length){
+        msg += `\n\n失败 ${fails.length} 条：\n` + fails.slice(0,10)
+          .map(f=>`· ${String(f.title||f.aweme_id).slice(0,22)}：${String(f.error||'').slice(0,48)}`).join('\n');
+      }
+      alert(msg);
+    }catch(e){ /* ignore */ }
+    return;
+  }
+
+  if(wasCollect){
+    likeInited = true;
+    likeMeta = await api('/api/liked/meta');
+    if(likeMeta.count === 0){
+      renderLikeNotice('采集结束，但本地仍没有「喜欢」数据。可能是登录态失效，'
+        + '或在无人值守模式下无法扫码 —— 请先双击 <code>start-collect.bat</code> 完成登录。', true);
+    } else {
+      renderLikeNotice('');
+    }
+    await loadStatsOnly();
+    await reload();
+    return;
+  }
+
+  selected.clear();
+  await Promise.all([reload(), loadFolders(), loadStatsOnly()]);
+  const res = await api('/api/jobs/' + (r.id || '') + '/results').catch(()=>({results:{}}));
+  const fails = Object.values((res && res.results) || {}).filter(x=>x.state === 'fail');
+  if(fails.length){
+    alert(`完成。失败 ${fails.length} 条：\n`
+      + fails.map(f=>(f.aweme_id + ': ' + (f.error||'').slice(0,80))).join('\n').slice(0,1200));
+  }
+}
+
+async function stopJob(){
+  if(!job){ endJobUI(); return; }
+  const title = document.getElementById('progTitle').textContent;
+  const isLike = title.includes('采集') ;
+  const isUncol = title.includes('取消');
+  let ask;
+  if(isLike) ask = '停止采集？\n（断点会保存，下次可继续）';
+  else if(isUncol) ask = '停止取消？\n（已取消的不会回滚，剩下的条目不再处理）';
+  else ask = '停止当前转写任务？\n（会等当前这条转完再退出，已完成的会保留）';
+  if(!confirm(ask)) return;
+  const bs = document.getElementById('btnStop');
+  if(bs){ bs.disabled = true; bs.textContent = '停止中…'; }
+  await api('/api/jobs/' + job + '/stop', {method:'POST'});
+}
+
+function endJobUI(){
+  job = null; clearTimeout(jobTimer);
+  setBusy(false);
+  document.getElementById('progbar').classList.remove('on');
+  const bs = document.getElementById('btnStop');
+  if(bs){ bs.disabled = false; bs.textContent = '⏹ 停止'; }
+}
+
+// ---------- 采集 ----------
+async function startCollect(){
+  if(collectJob || job){ alert('有任务在进行中'); return; }
+  if(curTab === 'like') return startCollectLiked(false);
+  if(!confirm('用已保存的登录态重新采集收藏（headless，约几十秒）？')) return;
+  const r = await api('/api/collect', {method:'POST'});
+  if(r.error){ alert(r.error); return; }
+  collectJob = r.job_id;
+  setBusy(true);
+  document.getElementById('btnCollect').textContent = '采集中…';
+  document.getElementById('progbar').classList.add('on', 'indet');
+  document.getElementById('progTitle').textContent = '正在重新采集收藏…';
+  const poll = async ()=>{
+    const j = await api('/api/jobs/' + collectJob);
+    if(j.status === 'collecting' || j.status === 'running'){ setTimeout(poll, 1500); return; }
+    collectJob = null;
+    setBusy(false);
+    document.getElementById('progbar').classList.remove('on', 'indet');
+    document.getElementById('btnCollect').textContent = '🔄 重新采集收藏';
+    await Promise.all([reload(), loadFolders(), loadStatsOnly()]);
+    alert('采集完成。\n' + String(j.message || '').slice(0, 600));
+  };
+  poll();
+}
+
+async function startCollectLiked(reset){
+  if(collectJob || job){ alert('有任务在进行中'); return; }
+  const m = await api('/api/liked/meta');
+  if(m.count > 0 && !m.done){
+    const go = confirm(`本地已有 ${m.count} 条喜欢。\n\n`
+      + `【确定】从断点继续采集（推荐，已采到的不重复）\n`
+      + `【取消】从头重采（会重新走一遍全部翻页，较慢）`);
+    reset = !go;
+  } else if(m.count > 0 && m.done){
+    if(!confirm(`本地已有 ${m.count} 条喜欢（上次已采完）。\n重新采集一遍以获取新增的点赞？`)) return;
+    reset = false;
+  } else if(!reset){
+    if(!confirm('开始采集「喜欢」列表？\n\n数据量可能很大（几千到几万条），'
+      + '过程中可以随时停止，断点会自动保存。')) return;
+  }
+  const r = await api('/api/collect-liked', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({reset: !!reset})
+  });
+  if(r.error){ alert(r.error); return; }
+  job = r.job_id;
+  setBusy(true);
+  const bar = document.getElementById('progbar');
+  bar.classList.add('on');
+  document.getElementById('progTitle').textContent = '正在采集「喜欢」…';
+  document.getElementById('progFill').style.width = '0%';
+  pollJob();
+}
+
+// ---------- 目录 / 模型 / 收藏夹 / AI ----------
+async function openObsidian(){ await api('/api/open-note-dir', {method:'POST'}); }
+async function openSummaryDir(){ await api('/api/open-summary-dir', {method:'POST'}); }
+
+async function loadModels(){
+  try{
+    const r = await api('/api/models');
+    const sel = document.getElementById('modelSel');
+    const hint = document.getElementById('modelHint');
+    const avail = r.available || {};
+    const rec = r.recommended || 'small';
+    sel.innerHTML = '';
+    for(const m of Object.keys(avail)){
+      const ok = avail[m];
+      const o = document.createElement('option');
+      o.value = m;
+      o.disabled = !ok;
+      o.textContent = m + (ok ? (m === rec ? ' 推荐' : '') : ' 需下载');
+      if(m === rec && ok) o.selected = true;
+      sel.appendChild(o);
+    }
+    const usable = Object.keys(avail).filter(m=>avail[m]);
+    if(!avail[rec] && usable.length) sel.value = usable[0];
+    hint.textContent = usable.length ? '' : '⚠ 无本地模型';
+  }catch(e){ /* ignore */ }
+}
+
+async function loadFolders(){
+  try{
+    const r = await api('/api/folders');
+    const sel = document.getElementById('folderSel');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">全部收藏夹</option>';
+    for(const f of (r.folders||[])){
+      const o = document.createElement('option');
+      o.value = f.name;
+      o.textContent = `${f.name} (${f.count})`;
+      sel.appendChild(o);
+    }
+    if(r.uncategorized){
+      const o = document.createElement('option');
+      o.value = '__none__';
+      o.textContent = `未归类 (${r.uncategorized})`;
+      sel.appendChild(o);
+    }
+    if([...sel.options].some(o=>o.value === cur)) sel.value = cur;
+  }catch(e){ /* ignore */ }
+}
+
+async function loadAiStatus(){
+  try{
+    const r = await api('/api/ai/status');
+    const b = document.getElementById('btnAi');
+    if(!r.available){ b.textContent = '⚙️ AI 不可用'; return; }
+    if(r.configured){ b.textContent = '⚙️ AI 已配置'; b.style.borderColor = '#2ea043'; }
+    else { b.textContent = '⚙️ 配置 AI'; b.style.borderColor = '#d29922'; }
+  }catch(e){ /* ignore */ }
+}
+
+async function openAiSettings(){
+  const r = await api('/api/ai/status');
+  document.getElementById('aiBase').value = r.base_url || '';
+  document.getElementById('aiModel').value = r.model || '';
+  document.getElementById('aiKey').value = '';
+  const s = document.getElementById('aiStatus');
+  if(r.configured){ s.className = 'status ok'; s.textContent = `已配置（${r.masked}）；重新填写可覆盖。`; }
+  else { s.className = 'status no'; s.textContent = '尚未配置，AI 总结/翻译不可用。'; }
+  document.getElementById('aiModal').classList.add('on');
+}
+function closeAiSettings(){ document.getElementById('aiModal').classList.remove('on'); }
+
+async function saveAiSettings(){
+  const body = {api_key: document.getElementById('aiKey').value,
+                base_url: document.getElementById('aiBase').value,
+                model: document.getElementById('aiModel').value};
+  const r = await api('/api/ai/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if(r.error){ alert(r.error); return; }
+  await loadAiStatus();
+  const s = document.getElementById('aiStatus');
+  if(r.configured){ s.className = 'status ok'; s.textContent = '已保存 ✓'; setTimeout(closeAiSettings, 500); }
+  else { s.className = 'status no'; s.textContent = '未填写 Key，仍未配置。'; }
+}
+
+async function testAi(){
+  const key = document.getElementById('aiKey').value;
+  if(!key && !(await api('/api/ai/status')).configured){ alert('请先填写 API Key'); return; }
+  const s = document.getElementById('aiStatus');
+  s.className = 'status'; s.textContent = '测试中…';
+  await api('/api/ai/config', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({api_key:key, base_url:document.getElementById('aiBase').value, model:document.getElementById('aiModel').value})});
+  const r = await api('/api/ai/test', {method:'POST'});
+  if(r.ok){ s.className = 'status ok'; s.textContent = '✓ 连接成功：' + String(r.reply||'').slice(0,50); }
+  else { s.className = 'status no'; s.textContent = '✗ ' + (r.error||'失败'); }
+  await loadAiStatus();
+}
+
+async function summarizeSelected(mode){
+  const ids = [...selected];
+  if(ids.length === 0){ alert('先在卡片上点选要总结的视频（需已转写）。'); return; }
+  const topic = document.getElementById('topic').value.trim();
+  if(mode === 'topic' && !confirm(`把选中的 ${ids.length} 条汇总成一篇主题综述？`)) return;
+  if(mode === 'each' && !confirm(`对选中的 ${ids.length} 条逐条生成 AI 总结？`)) return;
+  if(job){ alert('已有任务在进行中'); return; }
+  const r = await api('/api/summarize', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ids, mode, topic})});
+  if(r.error){
+    if(String(r.error).includes('API key')){ if(confirm(r.error + '\n\n现在去配置？')) openAiSettings(); }
+    else alert(r.error);
+    return;
+  }
+  job = r.job_id;
+  setBusy(true);
+  document.getElementById('progbar').classList.add('on');
+  pollJob();
+}
+
+// 搜索框：输入停顿 350ms 后自动查
+let qTimer = null;
+document.getElementById('q').addEventListener('input', ()=>{
+  clearTimeout(qTimer);
+  qTimer = setTimeout(reload, 350);
+});
+document.getElementById('q').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ clearTimeout(qTimer); reload(); }
+});
+
+// 滚动到底自动加载下一页
+window.addEventListener('scroll', ()=>{
+  if(loading) return;
+  const moreBox = document.getElementById('moreBox');
+  if(moreBox.style.display === 'none') return;
+  if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) loadPage(false);
+});
+
+// 翻译模式：记住上次选择（仅本机浏览器）
+(function(){
+  const el = document.getElementById('trMode');
+  if(!el) return;
+  const saved = localStorage.getItem('douyin.trMode');
+  if(saved) el.value = saved;
+  el.addEventListener('change', ()=> localStorage.setItem('douyin.trMode', el.value));
+})();
+
+// 首次加载：只拉收藏，不碰喜欢（懒加载）
+Promise.all([loadModels(), loadFolders(), loadAiStatus()]).then(reload);
+</script>
+</body>
+</html>

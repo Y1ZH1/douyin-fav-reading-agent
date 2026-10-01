@@ -1,0 +1,42 @@
+{
+  "name": "reading-agent-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vueuse/core": "^11.1.0",
+    "clsx": "^2.1.1",
+    "diff": "^7.0.0",
+    "idb": "^8.0.3",
+    "katex": "^0.16.47",
+    "lucide-vue-next": "^0.451.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-attrs": "^4.5.0",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-katex": "^2.0.3",
+    "mermaid": "^11.15.0",
+    "pinia": "^2.2.4",
+    "shiki": "^1.22.0",
+    "tailwind-merge": "^2.5.3",
+    "tailwindcss-animate": "^1.0.7",
+    "vue": "^3.5.11",
+    "vue-router": "^4.4.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/markdown-it": "^14.1.2",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "vue-tsc": "^2.1.6"
+  }
+}

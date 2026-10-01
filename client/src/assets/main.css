@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 215 20% 40%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+    /* Code block colors — light theme (matches github-light) */
+    --code-bg: 255 255 255;
+    --code-header-bg: 246 248 250;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+    /* Code block colors — dark theme (matches github-dark) */
+    --code-bg: 13 17 23;
+    --code-header-bg: 22 27 34;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
+
+@layer components {
+  .code-block-wrapper {
+    @apply relative rounded-lg border border-border overflow-hidden my-4;
+    background-color: rgb(var(--code-bg));
+  }
+
+  .code-block-header {
+    @apply flex items-center justify-between px-4 py-2 border-b border-border;
+    background-color: rgb(var(--code-header-bg));
+  }
+
+  .code-block-lang {
+    @apply text-xs text-muted-foreground font-mono;
+  }
+
+  .typing-cursor::after {
+    content: '|';
+    @apply animate-pulse text-primary;
+  }
+
+  /* Diff styles */
+  .diff-add {
+    @apply bg-green-900/20;
+  }
+  .diff-delete {
+    @apply bg-red-900/20;
+  }
+  .diff-add .line-number {
+    @apply bg-green-800/40;
+  }
+  .diff-delete .line-number {
+    @apply bg-red-800/40;
+  }
+
+  /* KaTeX overrides for dark theme */
+  .katex {
+    @apply text-foreground;
+  }
+  .katex .mathnormal {
+    @apply text-foreground;
+  }
+
+  /* Code focus highlight */
+  .code-focus {
+    @apply ring-1 ring-primary/30;
+  }
+
+  /* Details / code folding */
+  .code-details > summary {
+    @apply list-none;
+  }
+  .code-details > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Font size scaling — controlled by data-font-size on <html> */
+html[data-font-size='small'] {
+  font-size: 87.5%; /* ~14px base */
+}
+html[data-font-size='medium'] {
+  font-size: 100%; /* 16px base (default) */
+}
+html[data-font-size='large'] {
+  font-size: 112.5%; /* ~18px base */
+}
