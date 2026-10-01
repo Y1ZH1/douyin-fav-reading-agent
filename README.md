@@ -211,7 +211,7 @@ aicodetutor/
 │  ├─ retrieve.py               # FTS5 全文索引 + 可选向量
 │  ├─ highlights.py             # 划线落库格式 + stale 重匹配
 │  ├─ vector_setup.py           # 一键装向量环境
-│  ├─ _migrate_notes.py         # 旧版平铺笔记 → 新分区的一次性迁移
+│  ├─ migrate_notes.py          # 旧版平铺笔记 → 新分区的一次性迁移
 │  └─ tests/
 │
 ├─ docs/                        # 规格 / 设计 / 计划 / 简历口径

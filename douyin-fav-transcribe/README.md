@@ -108,7 +108,7 @@ douyin-fav-transcribe/            ← 本仓库根目录
 > 在抖音里改了收藏夹归属后**重新转录**，旧副本会自动搬到新目录、不会留下孤儿文件。
 
 > **从旧版（平铺）升级要跑一次迁移**：老版本把所有笔记平铺在 `抖音收藏/` 下，升级后**历史笔记不会自己搬家**。
-> 用仓库自带的 `_migrate_notes.py`：`python _migrate_notes.py` 先空跑看「哪篇去哪」（不动任何文件），
+> 用仓库自带的 `migrate_notes.py`：`python migrate_notes.py` 先空跑看「哪篇去哪」（不动任何文件），
 > 确认无误再加 `--apply`。它会把旧目录整份备份到 `work/_backup_抖音收藏_<时间戳>/`，
 > 并在 `work/_migrate_manifest_<时间戳>.json` 留下每一笔搬移记录，可反向回滚。
 > 落库根取自 `core.DEFAULT_OBSIDIAN`（即 `DOUYIN_OBSIDIAN_DIR`），**脚本里不写死任何绝对路径**。
