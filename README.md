@@ -125,6 +125,9 @@
 ### 4.2 装依赖
 
 ```bash
+git clone git@github.com:Y1ZH1/douyin-fav-reading-agent.git
+cd douyin-fav-reading-agent
+
 npm install
 cd client && npm install && cd ..
 cd server && npm install && cd ..
